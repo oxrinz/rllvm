@@ -5,8 +5,8 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    _ = b.addModule("rrlvm", .{
-        .root_source_file = b.path("src/rrlvm.zig"),
+    _ = b.addModule("rllvm", .{
+        .root_source_file = b.path("src/rllvm.zig"),
         .target = target,
         .optimize = optimize,
     });
