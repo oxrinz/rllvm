@@ -1,89 +1,97 @@
-pub const analysis = @import("rllvm/analysis.zig");
-pub const blake3 = @import("rllvm/blake3.zig");
-pub const bitreader = @import("rllvm/bitreader.zig");
-pub const bitwriter = @import("rllvm/bitwriter.zig");
-pub const core = @import("rllvm/core.zig");
-pub const debug = @import("rllvm/debuginfo.zig");
-pub const disasm = @import("rllvm/disassembler.zig");
-pub const engine = @import("rllvm/executionEngine.zig");
-pub const errors = @import("rllvm/errors.zig");
-pub const error_handling = @import("rllvm/error_handling.zig");
-pub const initialization = @import("rllvm/initialization.zig");
-pub const irreader = @import("rllvm/irreader.zig");
-pub const linker = @import("rllvm/linker.zig");
-pub const lto = @import("rllvm/lto.zig");
-pub const jit = @import("rllvm/lljit.zig");
-pub const orc = @import("rllvm/orc.zig");
-pub const orcee = @import("rllvm/orcee.zig");
-pub const remarks = @import("rllvm/remarks.zig");
-pub const support = @import("rllvm/support.zig");
-pub const target = @import("rllvm/target.zig");
-pub const target_machine = @import("rllvm/target_machine.zig");
-pub const transform = @import("rllvm/transform.zig");
-pub const types = @import("rllvm/types.zig");
+// IMPORTANT !! don't rename raw_llvm folder. see "llvm intrinsics" test below for more detail. renaming raw_llvm to llvm will cause that test to fail and break everything. big boom
 
-test "all rllvm modules" {
-    _ = analysis;
-    _ = blake3;
-    _ = bitreader;
-    _ = bitwriter;
-    _ = core;
-    _ = debug;
-    _ = disasm;
-    _ = engine;
-    _ = errors;
-    _ = error_handling;
-    _ = initialization;
-    _ = irreader;
-    _ = linker;
-    _ = lto;
-    _ = jit;
-    _ = orc;
-    _ = orcee;
-    _ = remarks;
-    _ = support;
-    _ = target;
-    _ = target_machine;
-    _ = transform;
+pub const llvm = struct {
+    pub const analysis = @import("raw_llvm/analysis.zig");
+    pub const blake3 = @import("raw_llvm/blake3.zig");
+    pub const bitreader = @import("raw_llvm/bitreader.zig");
+    pub const bitwriter = @import("raw_llvm/bitwriter.zig");
+    pub const core = @import("raw_llvm/core.zig");
+    pub const debug = @import("raw_llvm/debuginfo.zig");
+    pub const disasm = @import("raw_llvm/disassembler.zig");
+    pub const engine = @import("raw_llvm/executionEngine.zig");
+    pub const errors = @import("raw_llvm/errors.zig");
+    pub const error_handling = @import("raw_llvm/error_handling.zig");
+    pub const initialization = @import("raw_llvm/initialization.zig");
+    pub const irreader = @import("raw_llvm/irreader.zig");
+    pub const linker = @import("raw_llvm/linker.zig");
+    pub const lto = @import("raw_llvm/lto.zig");
+    pub const jit = @import("raw_llvm/lljit.zig");
+    pub const orc = @import("raw_llvm/orc.zig");
+    pub const orcee = @import("raw_llvm/orcee.zig");
+    pub const remarks = @import("raw_llvm/remarks.zig");
+    pub const support = @import("raw_llvm/support.zig");
+    pub const target = @import("raw_llvm/target.zig");
+    pub const target_machine = @import("raw_llvm/target_machine.zig");
+    pub const transform = @import("raw_llvm/transform.zig");
+    pub const types = @import("raw_llvm/types.zig");
+};
+
+pub const types = @import("rllvm/types.zig");
+pub const cuda = @import("cuda.zig");
+
+test "all modules" {
+    _ = llvm.analysis;
+    _ = llvm.blake3;
+    _ = llvm.bitreader;
+    _ = llvm.bitwriter;
+    _ = llvm.core;
+    _ = llvm.debug;
+    _ = llvm.disasm;
+    _ = llvm.engine;
+    _ = llvm.errors;
+    _ = llvm.error_handling;
+    _ = llvm.initialization;
+    _ = llvm.irreader;
+    _ = llvm.linker;
+    _ = llvm.lto;
+    _ = llvm.jit;
+    _ = llvm.orc;
+    _ = llvm.orcee;
+    _ = llvm.remarks;
+    _ = llvm.support;
+    _ = llvm.target;
+    _ = llvm.target_machine;
+    _ = llvm.transform;
 }
 
-test "fuck" {
+// this test is to make sure https://github.com/ziglang/zig/issues/2291 doesn't happen again
+test "llvm intrinsics" {
     const std = @import("std");
 
-    _ = target.LLVMInitializeNativeTarget();
-    _ = target.LLVMInitializeNativeAsmPrinter();
-    _ = target.LLVMInitializeNativeAsmParser();
+    _ = llvm.target.LLVMInitializeNativeTarget();
+    _ = llvm.target.LLVMInitializeNativeAsmPrinter();
+    _ = llvm.target.LLVMInitializeNativeAsmParser();
 
-    const module = core.LLVMModuleCreateWithName("main");
+    const module = llvm.core.LLVMModuleCreateWithName("main");
 
-    var param_types: [2]types.LLVMTypeRef = .{
-        core.LLVMInt32Type(),
-        core.LLVMInt32Type(),
+    var param_types: [2]llvm.types.LLVMTypeRef = .{
+        llvm.core.LLVMInt32Type(),
+        llvm.core.LLVMInt32Type(),
     };
-    const fn_type = core.LLVMFunctionType(core.LLVMInt32Type(), &param_types, 2, 0);
-    const function = core.LLVMAddFunction(module, "add", fn_type);
+    const fn_type = llvm.core.LLVMFunctionType(llvm.core.LLVMInt32Type(), &param_types, 2, 0);
+    const function = llvm.core.LLVMAddFunction(module, "add", fn_type);
 
-    const entry = core.LLVMAppendBasicBlock(function, "entry");
+    const entry = llvm.core.LLVMAppendBasicBlock(function, "entry");
 
-    const builder = core.LLVMCreateBuilder();
-    defer core.LLVMDisposeBuilder(builder);
-    core.LLVMPositionBuilderAtEnd(builder, entry);
+    const builder = llvm.core.LLVMCreateBuilder();
+    defer llvm.core.LLVMDisposeBuilder(builder);
+    llvm.core.LLVMPositionBuilderAtEnd(builder, entry);
 
-    const param0 = core.LLVMGetParam(function, 0);
-    const param1 = core.LLVMGetParam(function, 1);
-    const sum = core.LLVMBuildAdd(builder, param0, param1, "sum");
-    _ = core.LLVMBuildRet(builder, sum);
+    const param0 = llvm.core.LLVMGetParam(function, 0);
+    const param1 = llvm.core.LLVMGetParam(function, 1);
+    const sum = llvm.core.LLVMBuildAdd(builder, param0, param1, "sum");
+    _ = llvm.core.LLVMBuildRet(builder, sum);
 
     var error_msg: [*c]u8 = null;
-    var eng: types.LLVMExecutionEngineRef = undefined;
-    if (engine.LLVMCreateExecutionEngineForModule(&eng, module, &error_msg) != 0) {
+    var eng: llvm.types.LLVMExecutionEngineRef = undefined;
+    if (llvm.engine.LLVMCreateExecutionEngineForModule(&eng, module, &error_msg) != 0) {
         std.debug.print("Execution engine creation failed: {s}\n", .{error_msg});
-        core.LLVMDisposeMessage(error_msg);
+        llvm.core.LLVMDisposeMessage(error_msg);
         return error.ExecutionEngineCreationFailed;
     }
-    defer engine.LLVMDisposeExecutionEngine(eng);
+    defer llvm.engine.LLVMDisposeExecutionEngine(eng);
 
-    const add_addr = engine.LLVMGetFunctionAddress(eng, "add");
+    const add_addr = llvm.engine.LLVMGetFunctionAddress(eng, "add");
     const AddFn = fn (i32, i32) callconv(.C) i32;
     const add_fn: *const AddFn = @ptrFromInt(add_addr);
 

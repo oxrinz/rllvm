@@ -2,12 +2,62 @@ const rllvm = @import("rllvm.zig");
 const core = rllvm.core;
 const types = rllvm.types;
 
-fn callCuInit(module: types.LLVMModuleRef, builder: types.LLVMBuilderRef) !void {
+pub fn callCuInit(module: types.LLVMModuleRef, builder: types.LLVMBuilderRef) !void {
     var param_types = [_]types.LLVMTypeRef{core.LLVMInt32Type()};
     var final_args = [_]types.LLVMValueRef{core.LLVMConstInt(core.LLVMInt32Type(), 0, 0)};
 
     const ret = try callExternalFunction(module, builder, "cuInit", core.LLVMInt32Type(), &param_types, &final_args);
     try cudaCheckError(ret, 0);
+}
+
+pub fn callCuDeviceGet(builder: types.LLVMBuilderRef) !types.CudaDeviceRef {
+    const cuda_device = types.CudaDeviceRef{ .ef = core.LLVMBuildAlloca(builder, core.LLVMInt32Type(), "device") };
+    var param_types = [_]types.LLVMTypeRef{ core.LLVMPointerType(core.LLVMInt32Type(), 0), core.LLVMInt32Type() };
+    var final_args = [_]types.LLVMValueRef{ cuda_device.?.ref, core.LLVMConstInt(core.LLVMInt32Type(), 0, 0) };
+
+    const ret = try callExternalFunction("cuDeviceGet", core.LLVMInt32Type(), &param_types, &final_args);
+    try cudaCheckError(ret, 1);
+
+    return cuda_device;
+}
+
+pub fn callCuContextCreate(builder: types.LLVMBuilderRef, cuda_device: types.CudaDeviceRef) !types.CudaContextRef {
+    const cuda_context = types.CudaContextRef{ .ref = core.LLVMBuildAlloca(builder, core.LLVMInt32Type(), "context") };
+
+    const device_val = core.LLVMBuildLoad2(builder, core.LLVMInt32Type(), cuda_device.ref, "load_device");
+    var param_types = [_]types.LLVMTypeRef{ core.LLVMPointerType(core.LLVMInt32Type(), 0), core.LLVMInt32Type(), core.LLVMInt32Type() };
+    var final_args = [_]types.LLVMValueRef{ cuda_context.ref, core.LLVMConstInt(core.LLVMInt32Type(), 0, 0), device_val };
+
+    const ret = try callExternalFunction("cuCtxCreate_v2", core.LLVMInt32Type(), &param_types, &final_args);
+    try cudaCheckError(ret, 2);
+
+    return cuda_context;
+}
+
+pub fn callCuModuleLoadData(builder: types.LLVMBuilderRef, ptx: types.StringRef) !types.CudaModuleRef {
+    const cuda_module = types.CudaModuleRef{ .ref = core.LLVMBuildAlloca(builder, core.LLVMInt32Type(), "module") };
+
+    var param_types = [_]types.LLVMTypeRef{ core.LLVMPointerType(core.LLVMInt32Type(), 0), core.LLVMPointerType(core.LLVMInt32Type(), 0) };
+    var final_args = [_]types.LLVMValueRef{ cuda_module.?.ref, ptx };
+
+    const ret = try callExternalFunction("cuModuleLoadData", core.LLVMInt32Type(), &param_types, &final_args);
+    try cudaCheckError(ret, 3);
+
+    return cuda_module;
+}
+
+pub fn callCuModuleGetFunction(builder: types.LLVMBuilderRef, cuda_module: types.CudaModuleRef) !types.CudaFunctionRef {
+    const kernel_function = types.CudaFunctionRef{ .ref = core.LLVMBuildAlloca(builder, core.LLVMInt32Type(), "kernel") };
+    const module = core.LLVMBuildLoad2(builder, core.LLVMInt32Type(), cuda_module.?.ref, "load_module");
+    const kernel_name = core.LLVMBuildGlobalStringPtr(builder, "main", "kernel_name");
+
+    var param_types = [_]types.LLVMTypeRef{ core.LLVMPointerType(core.LLVMInt32Type(), 0), core.LLVMInt32Type(), core.LLVMPointerType(core.LLVMInt8Type(), 0) };
+    var final_args = [_]types.LLVMValueRef{ kernel_function.ref, module, kernel_name };
+
+    const ret = try callExternalFunction("cuModuleGetFunction", core.LLVMInt32Type(), &param_types, &final_args);
+    try cudaCheckError(ret, 8);
+
+    return kernel_function;
 }
 
 fn callExternalFunction(
@@ -61,7 +111,7 @@ fn initCudaErrorFunction(module: types.LLVMModuleRef, builder: types.LLVMBuilder
 
     core.LLVMPositionBuilderAtEnd(builder, error_block);
     // TODO: add cuda error printing
-    // try self.callPrintCudaError(.{ .value_ref = ret_val }, .{ .value_ref = fn_val });
+    // try self.callPrintCudaError(.{ .ref = ret_val }, .{ .ref = fn_val });
 
     const exit_fn_type = core.LLVMFunctionType(core.LLVMVoidType(), @constCast(&[_]types.LLVMTypeRef{core.LLVMInt32Type()}), 1, 0);
     const exit_fn = core.LLVMGetNamedFunction(module, "exit") orelse
