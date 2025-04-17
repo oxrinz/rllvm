@@ -11,16 +11,12 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    _ = b.addModule("clang", .{
-        .root_source_file = b.path("src/llvm/clang.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
     const tests = b.addTest(.{
         .root_module = llvm_module,
         .optimize = optimize,
     });
+
+    _ = setupLLVMInBuild(llvm_module);
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&b.addRunArtifact(tests).step);
