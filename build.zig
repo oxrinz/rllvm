@@ -6,7 +6,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     _ = b.addModule("llvm", .{
-        .root_source_file = b.path("src/llvm.zig"),
+        .root_source_file = b.path("src/llvm/llvm.zig"),
         .target = target,
         .optimize = optimize,
     });
