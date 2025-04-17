@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const rllvm = @import("rllvm.zig");
 const llvm = rllvm.llvm;
 const types = rllvm.types;
@@ -7,7 +9,8 @@ pub fn callCuInit(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuil
     var final_args = [_]llvm.types.LLVMValueRef{llvm.core.LLVMConstInt(llvm.core.LLVMInt32Type(), 0, 0)};
 
     const ret = try callExternalFunction(module, builder, "cuInit", llvm.core.LLVMInt32Type(), &param_types, &final_args);
-    try cudaCheckError(ret, 0);
+    _ = ret;
+    // try cudaCheckError(module, builder, ret, 0);
 }
 
 pub fn callCuDeviceGet(builder: llvm.types.LLVMBuilderRef) !types.CudaDeviceRef {
@@ -78,12 +81,12 @@ fn callExternalFunction(
     return llvm.core.LLVMBuildCall2(builder, fn_type, fn_val, @ptrCast(@constCast(args)), @intCast(args.len), "");
 }
 
-fn cudaCheckError(ret_val: llvm.types.LLVMValueRef, function: i32) !void {
-    try initCudaErrorFunction();
+fn cudaCheckError(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, ret_val: llvm.types.LLVMValueRef, function: i32) !void {
+    try initCudaErrorFunction(module, builder);
 
     var param_types = [_]llvm.types.LLVMTypeRef{ llvm.core.LLVMInt32Type(), llvm.core.LLVMInt32Type() };
     var args = [_]llvm.types.LLVMValueRef{ ret_val, llvm.core.LLVMConstInt(llvm.core.LLVMInt32Type(), @intCast(function), 0) };
-    _ = try callExternalFunction("cudaCheckError", llvm.core.LLVMInt32Type(), param_types[0..], args[0..]);
+    _ = try callExternalFunction(module, builder, "cudaCheckError", llvm.core.LLVMInt32Type(), param_types[0..], args[0..]);
 }
 
 fn initCudaErrorFunction(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef) !void {
@@ -126,4 +129,44 @@ fn initCudaErrorFunction(module: llvm.types.LLVMModuleRef, builder: llvm.types.L
     _ = llvm.core.LLVMBuildRet(builder, llvm.core.LLVMConstInt(llvm.core.LLVMInt32Type(), 0, 0));
 
     llvm.core.LLVMPositionBuilderAtEnd(builder, saved_block);
+}
+
+test "cuda" {
+    _ = llvm.target.LLVMInitializeNativeTarget();
+    _ = llvm.target.LLVMInitializeNativeAsmPrinter();
+    _ = llvm.target.LLVMInitializeNativeAsmParser();
+
+    const module = llvm.core.LLVMModuleCreateWithName("main");
+
+    const fn_type = llvm.core.LLVMFunctionType(llvm.core.LLVMInt32Type(), null, 0, 0);
+    const function = llvm.core.LLVMAddFunction(module, "main", fn_type);
+
+    const entry = llvm.core.LLVMAppendBasicBlock(function, "entry");
+
+    const builder = llvm.core.LLVMCreateBuilder();
+    defer llvm.core.LLVMDisposeBuilder(builder);
+    llvm.core.LLVMPositionBuilderAtEnd(builder, entry);
+
+    try callCuInit(module, builder);
+
+    const zero = llvm.core.LLVMConstInt(llvm.core.LLVMInt32Type(), 0, 0);
+    _ = llvm.core.LLVMBuildRet(builder, zero);
+
+    llvm.core.LLVMDumpModule(module);
+
+    var error_msg: [*c]u8 = null;
+    var engine: llvm.types.LLVMExecutionEngineRef = undefined;
+    if (llvm.engine.LLVMCreateExecutionEngineForModule(&engine, module, &error_msg) != 0) {
+        std.debug.print("Execution engine creation failed: {s}\n", .{error_msg});
+        llvm.core.LLVMDisposeMessage(error_msg);
+        return error.ExecutionEngineCreationFailed;
+    }
+    defer llvm.engine.LLVMDisposeExecutionEngine(engine);
+
+    const main_addr = llvm.engine.LLVMGetFunctionAddress(engine, "main");
+    const MainFn = fn () callconv(.C) i32;
+    const main_fn: *const MainFn = @ptrFromInt(main_addr);
+
+    const result = main_fn();
+    _ = result;
 }

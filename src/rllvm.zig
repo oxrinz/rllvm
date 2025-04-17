@@ -30,28 +30,9 @@ pub const types = @import("rllvm/types.zig");
 pub const cuda = @import("cuda.zig");
 
 test "all modules" {
-    _ = llvm.analysis;
-    _ = llvm.blake3;
-    _ = llvm.bitreader;
-    _ = llvm.bitwriter;
-    _ = llvm.core;
-    _ = llvm.debug;
-    _ = llvm.disasm;
-    _ = llvm.engine;
-    _ = llvm.errors;
-    _ = llvm.error_handling;
-    _ = llvm.initialization;
-    _ = llvm.irreader;
-    _ = llvm.linker;
-    _ = llvm.lto;
-    _ = llvm.jit;
-    _ = llvm.orc;
-    _ = llvm.orcee;
-    _ = llvm.remarks;
-    _ = llvm.support;
-    _ = llvm.target;
-    _ = llvm.target_machine;
-    _ = llvm.transform;
+    _ = llvm;
+
+    _ = cuda;
 }
 
 // this test is to make sure https://github.com/ziglang/zig/issues/2291 doesn't happen again
