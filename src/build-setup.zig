@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub fn setupLLVMInBuild(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) *std.Build.Module {
-    const llvm_module = b.addModule("llvm", .{
+    const llvm_module = b.addModule("rllvm", .{
         .root_source_file = b.path("llvm/llvm.zig"),
         .target = target,
         .optimize = optimize,
