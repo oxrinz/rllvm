@@ -4,16 +4,15 @@ const rllvm = @import("rllvm.zig");
 const llvm = rllvm.llvm;
 const types = rllvm.types;
 
-pub fn callCuInit(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef) !void {
+pub fn init(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef) !void {
     var param_types = [_]llvm.types.LLVMTypeRef{llvm.core.LLVMInt32Type()};
     var final_args = [_]llvm.types.LLVMValueRef{llvm.core.LLVMConstInt(llvm.core.LLVMInt32Type(), 0, 0)};
 
     const ret = try callExternalFunction(module, builder, "cuInit", llvm.core.LLVMInt32Type(), &param_types, &final_args);
-    _ = ret;
-    // try cudaCheckError(module, builder, ret, 0);
+    try cudaCheckError(module, builder, ret, 0);
 }
 
-pub fn callCuDeviceGet(builder: llvm.types.LLVMBuilderRef) !types.CudaDeviceRef {
+pub fn deviceGet(builder: llvm.types.LLVMBuilderRef) !types.CudaDeviceRef {
     const cuda_device = types.CudaDeviceRef{ .ef = llvm.core.LLVMBuildAlloca(builder, llvm.core.LLVMInt32Type(), "device") };
     var param_types = [_]types.LLVMTypeRef{ llvm.core.LLVMPointerType(llvm.core.LLVMInt32Type(), 0), llvm.core.LLVMInt32Type() };
     var final_args = [_]types.LLVMValueRef{ cuda_device.?.ref, llvm.core.LLVMConstInt(llvm.core.LLVMInt32Type(), 0, 0) };
@@ -24,7 +23,7 @@ pub fn callCuDeviceGet(builder: llvm.types.LLVMBuilderRef) !types.CudaDeviceRef 
     return cuda_device;
 }
 
-pub fn callCuContextCreate(builder: llvm.types.LLVMBuilderRef, cuda_device: llvm.types.CudaDeviceRef) !types.CudaContextRef {
+pub fn contextCreate(builder: llvm.types.LLVMBuilderRef, cuda_device: llvm.types.CudaDeviceRef) !types.CudaContextRef {
     const cuda_context = types.CudaContextRef{ .ref = llvm.core.LLVMBuildAlloca(builder, llvm.core.LLVMInt32Type(), "context") };
 
     const device_val = llvm.core.LLVMBuildLoad2(builder, llvm.core.LLVMInt32Type(), cuda_device.ref, "load_device");
@@ -37,7 +36,7 @@ pub fn callCuContextCreate(builder: llvm.types.LLVMBuilderRef, cuda_device: llvm
     return cuda_context;
 }
 
-pub fn callCuModuleLoadData(builder: llvm.types.LLVMBuilderRef, ptx: types.StringRef) !types.CudaModuleRef {
+pub fn moduleLoadData(builder: llvm.types.LLVMBuilderRef, ptx: types.StringRef) !types.CudaModuleRef {
     const cuda_module = types.CudaModuleRef{ .ref = llvm.core.LLVMBuildAlloca(builder, llvm.core.LLVMInt32Type(), "module") };
 
     var param_types = [_]types.LLVMTypeRef{ llvm.core.LLVMPointerType(llvm.core.LLVMInt32Type(), 0), llvm.core.LLVMPointerType(llvm.core.LLVMInt32Type(), 0) };
@@ -49,7 +48,7 @@ pub fn callCuModuleLoadData(builder: llvm.types.LLVMBuilderRef, ptx: types.Strin
     return cuda_module;
 }
 
-pub fn callCuModuleGetFunction(builder: llvm.types.LLVMBuilderRef, cuda_module: types.CudaModuleRef) !types.CudaFunctionRef {
+pub fn moduleGetFunction(builder: llvm.types.LLVMBuilderRef, cuda_module: types.CudaModuleRef) !types.CudaFunctionRef {
     const kernel_function = types.CudaFunctionRef{ .ref = llvm.core.LLVMBuildAlloca(builder, llvm.core.LLVMInt32Type(), "kernel") };
     const module = llvm.core.LLVMBuildLoad2(builder, llvm.core.LLVMInt32Type(), cuda_module.?.ref, "load_module");
     const kernel_name = llvm.core.LLVMBuildGlobalStringPtr(builder, "main", "kernel_name");
@@ -136,6 +135,8 @@ test "cuda" {
     _ = llvm.target.LLVMInitializeNativeAsmPrinter();
     _ = llvm.target.LLVMInitializeNativeAsmParser();
 
+    _ = rllvm.llvm.support.LLVMLoadLibraryPermanently("/run/opengl-driver/lib/libcuda.so");
+
     const module = llvm.core.LLVMModuleCreateWithName("main");
 
     const fn_type = llvm.core.LLVMFunctionType(llvm.core.LLVMInt32Type(), null, 0, 0);
@@ -147,12 +148,10 @@ test "cuda" {
     defer llvm.core.LLVMDisposeBuilder(builder);
     llvm.core.LLVMPositionBuilderAtEnd(builder, entry);
 
-    try callCuInit(module, builder);
+    try init(module, builder);
 
     const zero = llvm.core.LLVMConstInt(llvm.core.LLVMInt32Type(), 0, 0);
     _ = llvm.core.LLVMBuildRet(builder, zero);
-
-    llvm.core.LLVMDumpModule(module);
 
     var error_msg: [*c]u8 = null;
     var engine: llvm.types.LLVMExecutionEngineRef = undefined;
@@ -168,5 +167,5 @@ test "cuda" {
     const main_fn: *const MainFn = @ptrFromInt(main_addr);
 
     const result = main_fn();
-    _ = result;
+    std.debug.print("Result of 3 + 4 = {}\n", .{result});
 }
