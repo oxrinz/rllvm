@@ -31,6 +31,5 @@ pub const cuda = @import("cuda.zig");
 
 test "all modules" {
     _ = llvm;
-
     _ = cuda;
 }
