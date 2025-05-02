@@ -62,7 +62,7 @@ pub fn moduleGetFunction(module: llvm.types.LLVMModuleRef, builder: llvm.types.L
     return kernel_function;
 }
 
-pub fn memAlloc(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, size: types.IntegerRef) !void {
+fn memAlloc(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, size: types.IntegerRef) !void {
     const void_ptr_type = llvm.core.LLVMPointerType(llvm.core.LLVMVoidType(), 0);
     var param_types = [_]llvm.types.LLVMTypeRef{ void_ptr_type, llvm.core.LLVMInt64Type() };
     // const four = llvm.core.LLVMConstInt(llvm.core.LLVMInt64Type(), 4, 0);
@@ -72,7 +72,7 @@ pub fn memAlloc(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilde
     try cudaCheckError(module, builder, ret, 4);
 }
 
-pub fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, host_ptr: types.OpaqueRef, size_bytes: types.IntegerRef) !void {
+fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, host_ptr: types.OpaqueRef, size_bytes: types.IntegerRef) !void {
     const void_ptr_type = llvm.core.LLVMPointerType(llvm.core.LLVMVoidType(), 0);
     var param_types = [_]llvm.types.LLVMTypeRef{ llvm.core.LLVMInt64Type(), void_ptr_type, llvm.core.LLVMInt64Type() };
     const dereferenced_value = llvm.core.LLVMBuildLoad2(builder, llvm.core.LLVMInt64Type(), device_ptr.ref, "dereferenced_device_ptr");
@@ -81,7 +81,7 @@ pub fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilde
     try cudaCheckError(module, builder, ret, 5);
 }
 
-pub fn copyDToH(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, host_ptr: types.OpaqueRef, size_bytes: types.IntegerRef) !void {
+fn copyDToH(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, host_ptr: types.OpaqueRef, size_bytes: types.IntegerRef) !void {
     const void_ptr_type = llvm.core.LLVMPointerType(llvm.core.LLVMVoidType(), 0);
     var param_types = [_]llvm.types.LLVMTypeRef{ void_ptr_type, llvm.core.LLVMInt64Type(), llvm.core.LLVMInt64Type() };
     const dereferenced_value = llvm.core.LLVMBuildLoad2(builder, llvm.core.LLVMInt64Type(), device_ptr.ref, "dereferenced_device_ptr");
@@ -90,7 +90,7 @@ pub fn copyDToH(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilde
     try cudaCheckError(module, builder, ret, 6);
 }
 
-pub fn launchKernel(
+fn launchKernel(
     module: llvm.types.LLVMModuleRef,
     builder: llvm.types.LLVMBuilderRef,
     function: types.CudaFunctionRef,
@@ -297,12 +297,8 @@ test "cuda" {
     const array_data = llvm.core.LLVMConstArray(llvm.core.LLVMFloatType(), &const_vals[0], 6);
     _ = llvm.core.LLVMBuildStore(builder, array_data, alloca);
 
-    const d_input = types.CudaValueRef{
-        .ref = llvm.core.LLVMBuildAlloca(builder, llvm.core.LLVMInt64Type(), "d_input"),
-    };
-    const d_output = types.CudaValueRef{
-        .ref = llvm.core.LLVMBuildAlloca(builder, llvm.core.LLVMInt64Type(), "d_output"),
-    };
+    const d_input = types.CudaValueRef.create(builder);
+    const d_output = types.CudaValueRef.create(builder);
     const four: types.IntegerRef = .{ .ref = llvm.core.LLVMConstInt(llvm.core.LLVMInt64Type(), 4, 0) };
     try memAlloc(module, builder, d_output, four);
     try memAlloc(module, builder, d_input, four);

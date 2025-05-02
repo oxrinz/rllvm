@@ -43,22 +43,37 @@ pub const StringRef = struct {
     pub usingnamespace TypeChecker(getStringType);
 };
 
+fn CudaFunctions(comptime var_type: type) type {
+    return struct {
+        pub fn create(builder: types.LLVMBuilderRef) var_type {
+            return var_type{
+                .ref = core.LLVMBuildAlloca(builder, core.LLVMInt64Type(), "d_output"),
+            };
+        }
+    };
+}
+
 pub const CudaDeviceRef = struct {
     ref: types.LLVMValueRef,
+    pub usingnamespace CudaFunctions(@This());
 };
 
 pub const CudaContextRef = struct {
     ref: types.LLVMValueRef,
+    pub usingnamespace CudaFunctions(@This());
 };
 
 pub const CudaModuleRef = struct {
     ref: types.LLVMValueRef,
+    pub usingnamespace CudaFunctions(@This());
 };
 
 pub const CudaFunctionRef = struct {
     ref: types.LLVMValueRef,
+    pub usingnamespace CudaFunctions(@This());
 };
 
 pub const CudaValueRef = struct {
     ref: types.LLVMValueRef,
+    pub usingnamespace CudaFunctions(@This());
 };
