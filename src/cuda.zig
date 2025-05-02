@@ -62,7 +62,7 @@ pub fn moduleGetFunction(module: llvm.types.LLVMModuleRef, builder: llvm.types.L
     return kernel_function;
 }
 
-fn memAlloc(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, size: types.IntegerRef) !void {
+pub fn memAlloc(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, size: types.IntegerRef) !void {
     const void_ptr_type = llvm.core.LLVMPointerType(llvm.core.LLVMVoidType(), 0);
     var param_types = [_]llvm.types.LLVMTypeRef{ void_ptr_type, llvm.core.LLVMInt64Type() };
     // const four = llvm.core.LLVMConstInt(llvm.core.LLVMInt64Type(), 4, 0);
@@ -72,7 +72,7 @@ fn memAlloc(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef
     try cudaCheckError(module, builder, ret, 4);
 }
 
-fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, host_ptr: types.OpaqueRef, size_bytes: types.IntegerRef) !void {
+pub fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, host_ptr: types.OpaqueRef, size_bytes: types.IntegerRef) !void {
     const void_ptr_type = llvm.core.LLVMPointerType(llvm.core.LLVMVoidType(), 0);
     var param_types = [_]llvm.types.LLVMTypeRef{ llvm.core.LLVMInt64Type(), void_ptr_type, llvm.core.LLVMInt64Type() };
     const dereferenced_value = llvm.core.LLVMBuildLoad2(builder, llvm.core.LLVMInt64Type(), device_ptr.ref, "dereferenced_device_ptr");
@@ -81,7 +81,7 @@ fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef
     try cudaCheckError(module, builder, ret, 5);
 }
 
-fn copyDToH(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, host_ptr: types.OpaqueRef, size_bytes: types.IntegerRef) !void {
+pub fn copyDToH(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.CudaValueRef, host_ptr: types.OpaqueRef, size_bytes: types.IntegerRef) !void {
     const void_ptr_type = llvm.core.LLVMPointerType(llvm.core.LLVMVoidType(), 0);
     var param_types = [_]llvm.types.LLVMTypeRef{ void_ptr_type, llvm.core.LLVMInt64Type(), llvm.core.LLVMInt64Type() };
     const dereferenced_value = llvm.core.LLVMBuildLoad2(builder, llvm.core.LLVMInt64Type(), device_ptr.ref, "dereferenced_device_ptr");
