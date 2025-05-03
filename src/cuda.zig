@@ -90,7 +90,7 @@ pub fn copyDToH(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilde
     try cudaCheckError(module, builder, ret, 6);
 }
 
-fn launchKernel(
+pub fn launchKernel(
     module: llvm.types.LLVMModuleRef,
     builder: llvm.types.LLVMBuilderRef,
     function: types.CudaFunctionRef,
