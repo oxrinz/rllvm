@@ -115,7 +115,7 @@ pub fn launchKernel(
     const block_dim_z_val = block_dim_z.ref;
     const shared_mem_bytes_val = shared_mem_bytes.ref;
 
-    const array_type = llvm.core.LLVMArrayType(llvm.core.LLVMPointerType(llvm.core.LLVMInt64Type(), 0), 2);
+    const array_type = llvm.core.LLVMArrayType(llvm.core.LLVMPointerType(llvm.core.LLVMInt64Type(), 0), @intCast(kernel_params.len));
     const kernel_params_ptr = llvm.core.LLVMBuildAlloca(builder, array_type, "kernel_params_array");
 
     // _ = core.LLVMBuildStore(self.builder, kernel_params[0].value_ref, kernel_params_ptr);
@@ -126,7 +126,7 @@ pub fn launchKernel(
             llvm.core.LLVMConstInt(llvm.core.LLVMInt64Type(), idx, 0),
         };
 
-        const element_ptr = llvm.core.LLVMBuildGEP2(builder, llvm.core.LLVMArrayType(llvm.core.LLVMInt64Type(), @intCast(kernel_params.len)), kernel_params_ptr, &indices, 2, "element_ptr");
+        const element_ptr = llvm.core.LLVMBuildGEP2(builder, array_type, kernel_params_ptr, &indices, 2, "element_ptr");
 
         _ = llvm.core.LLVMBuildStore(builder, value.ref, element_ptr);
     }
@@ -331,6 +331,8 @@ test "cuda" {
     const first_element = llvm.core.LLVMBuildLoad2(builder, float_type, first_element_ptr, "first_element");
 
     _ = llvm.core.LLVMBuildRet(builder, first_element);
+
+    llvm.core.LLVMDumpModule(module);
 
     // cuda ends //
 
