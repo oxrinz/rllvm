@@ -24,9 +24,8 @@ const types = @import("raw_llvm/types.zig");
 
 pub fn print(builder: types.LLVMBuilderRef, var_value: types.LLVMValueRef, fmt: []const u8) !void {
     const module = core.LLVMGetBasicBlockParent(core.LLVMGetInsertBlock(builder));
-    const context = core.LLVMGetModuleContext(module);
-    const i8_ptr_ty = core.LLVMPointerTypeInContext(context, core.LLVMInt8TypeInContext(context), 0);
-    const int_ty = core.LLVMInt32TypeInContext(context);
+    const i8_ptr_ty = core.LLVMPointerType(core.LLVMInt8Type(), 0);
+    const int_ty = core.LLVMInt32Type();
     var param_types = [_]types.LLVMTypeRef{i8_ptr_ty};
     const printf_ty = core.LLVMFunctionType(int_ty, &param_types, 1, 1); // Vararg
     var printf_func = core.LLVMGetNamedFunction(module, "printf");
