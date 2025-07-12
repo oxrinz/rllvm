@@ -22,7 +22,7 @@ const target_machine = @import("raw_llvm/target_machine.zig");
 const transform = @import("raw_llvm/transform.zig");
 const types = @import("raw_llvm/types.zig");
 
-pub fn print(module: types.LLVMModuleRef, builder: types.LLVMBuilderRef, var_value: types.LLVMValueRef, fmt: []const u8) !void {
+pub fn print(module: types.LLVMModuleRef, builder: types.LLVMBuilderRef, var_value: types.LLVMValueRef, fmt: [*:0]const u8) !void {
     const i8_ptr_ty = core.LLVMPointerType(core.LLVMInt8Type(), 0);
     const int_ty = core.LLVMInt32Type();
     var param_types = [_]types.LLVMTypeRef{i8_ptr_ty};
