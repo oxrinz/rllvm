@@ -33,4 +33,5 @@ pub const utils = @import("utils.zig");
 test "all modules" {
     _ = llvm;
     _ = cuda;
+    _ = utils;
 }

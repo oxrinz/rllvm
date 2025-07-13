@@ -332,8 +332,6 @@ test "cuda" {
 
     _ = llvm.core.LLVMBuildRet(builder, first_element);
 
-    llvm.core.LLVMDumpModule(module);
-
     // cuda ends //
 
     var error_msg: [*c]u8 = null;
