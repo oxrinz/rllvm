@@ -26,7 +26,6 @@ pub const llvm = struct {
     pub const types = @import("raw_llvm/types.zig");
 };
 
-pub const types = @import("rllvm/types.zig");
 pub const cuda = @import("cuda.zig");
 pub const utils = @import("utils.zig");
 
