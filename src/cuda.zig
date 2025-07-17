@@ -73,7 +73,7 @@ pub fn memAlloc(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilde
     try cudaCheckError(module, builder, ret, 4);
 }
 
-pub fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.LLVMValueRef, host_ptr: types.LLVMValueRef, size_bytes: types.IntegerRef) !void {
+pub fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.LLVMValueRef, host_ptr: types.LLVMValueRef, size_bytes: types.LLVMValueRef) !void {
     const void_ptr_type = llvm.core.LLVMPointerType(llvm.core.LLVMVoidType(), 0);
     var param_types = [_]llvm.types.LLVMTypeRef{ llvm.core.LLVMInt64Type(), void_ptr_type, llvm.core.LLVMInt64Type() };
     const dereferenced_value = llvm.core.LLVMBuildLoad2(builder, llvm.core.LLVMInt64Type(), device_ptr, "dereferenced_device_ptr");
@@ -82,7 +82,7 @@ pub fn copyHToD(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilde
     try cudaCheckError(module, builder, ret, 5);
 }
 
-pub fn copyDToH(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.LLVMValueRef, host_ptr: types.LLVMValueRef, size_bytes: types.IntegerRef) !void {
+pub fn copyDToH(module: llvm.types.LLVMModuleRef, builder: llvm.types.LLVMBuilderRef, device_ptr: types.LLVMValueRef, host_ptr: types.LLVMValueRef, size_bytes: types.LLVMValueRef) !void {
     const void_ptr_type = llvm.core.LLVMPointerType(llvm.core.LLVMVoidType(), 0);
     var param_types = [_]llvm.types.LLVMTypeRef{ void_ptr_type, llvm.core.LLVMInt64Type(), llvm.core.LLVMInt64Type() };
     const dereferenced_value = llvm.core.LLVMBuildLoad2(builder, llvm.core.LLVMInt64Type(), device_ptr, "dereferenced_device_ptr");
